@@ -8,7 +8,6 @@ function M.show_signs(_, bufnr, _, opts)
   --- Get all diagnostics from the whole buffer rather
   --- than just the diagnostics passed to the handler
   local diagnostics = vim.diagnostic.get(bufnr)
-
   --- Find the "worst" diagnostic per line
   --- (NOTE: the less - the worse)
   local max_severity_per_line = {}
@@ -20,7 +19,18 @@ function M.show_signs(_, bufnr, _, opts)
   end
 
   local filtered_diagnostics = vim.tbl_values(max_severity_per_line)
-  M.orig_signs_handler.show(M.ns, bufnr, filtered_diagnostics, opts)
+  if
+    --- It may happen that `max_severity_per_line` table is irrelevant at the
+    --- moment of calling the handler. Since a user may have modified the
+    --- buffer in the meantime, and in case of deleting the buffer lines, it
+    --- can end up with an error "line is out of range". Checking `changedtick`
+    --- doesn't help from my experience. And calling recursively the handler
+    --- after pcall failed leads to stack overflow. But we don't need to retry
+    --- the handler in case of an error. It will be called again anyway.
+    pcall(M.orig_signs_handler.show, M.ns, bufnr, filtered_diagnostics, opts)
+  then
+    return
+  end
 end
 
 local function marker_position(rightmost, line_length)
@@ -42,8 +52,9 @@ end
 
 function M.show_virtual_text(_, bufnr)
   if
-      not vim.opt.modifiable:get()
-      or api.nvim_win_get_config(0).relative ~= "" then
+    not vim.opt.modifiable:get()
+    or api.nvim_win_get_config(0).relative ~= ""
+  then
     return
   end
 
@@ -83,15 +94,21 @@ function M.show_virtual_text(_, bufnr)
   end
 
   for dlnum, vt_pos in pairs(diag_line_id) do
-    api.nvim_buf_set_extmark(bufnr, M.ns, dlnum, 0, {
-      id = dlnum + 1, -- dlnum is 0-indexed, whereas id must be > 0
-      virt_text = vim.tbl_values(line_diagnostics[dlnum]),
-      virt_text_win_col = vt_pos,
-    })
+    if dlnum <= api.nvim_buf_line_count(bufnr) then
+      api.nvim_buf_set_extmark(bufnr, M.ns, dlnum, 0, {
+        id = dlnum + 1, -- dlnum is 0-indexed, whereas id must be > 0
+        virt_text = vim.tbl_values(line_diagnostics[dlnum]),
+        virt_text_win_col = vt_pos,
+      })
+    end
   end
 end
 
 function M.hide_virtual_text(_, bufnr)
+  if bufnr ~= api.nvim_get_current_buf() then
+    return
+  end
+
   for lnum = 1, api.nvim_buf_line_count(bufnr) do
     api.nvim_buf_del_extmark(bufnr, M.ns, lnum)
   end

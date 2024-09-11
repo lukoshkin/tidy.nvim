@@ -10,7 +10,6 @@ api.nvim_create_user_command("Format", utils.lsp_format, { range = "%" })
 lspconf.orig_signs_handler = orig_signs_handler
 lspconf.ns = ns
 
-
 function M.setup(cfg)
   lspconf.cfg = vim.tbl_deep_extend("keep", cfg or {}, utils.default)
   utils.set_signs(lspconf.cfg.signs)
@@ -45,11 +44,12 @@ function M.setup(cfg)
       focus = false,
       format = function(diagnostic)
         if
-            (diagnostic.user_data ~= nil)
-            and (diagnostic.user_data.lsp ~= nil)
-            and (diagnostic.user_data.lsp.code ~= nil)
+          diagnostic.user_data ~= nil
+          and diagnostic.user_data.lsp ~= nil
+          and diagnostic.user_data.lsp.code ~= nil
         then
-          return string.format("%s: %s",
+          return string.format(
+            "%s: %s",
             diagnostic.user_data.lsp.code,
             diagnostic.message
           )

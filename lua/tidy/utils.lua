@@ -27,11 +27,11 @@ M.default = {
       Info = "DiagnosticVirtualTextInfo",
       Hint = "DiagnosticVirtualTextHint",
     },
-  }
+  },
 }
 
 function M.set_signs(signs)
-  for _, name in pairs({ "Error", "Warn", "Info", "Hint" }) do
+  for _, name in pairs { "Error", "Warn", "Info", "Hint" } do
     fn.sign_define("DiagnosticSign" .. name, signs[name])
   end
 end
