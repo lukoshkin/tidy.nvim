@@ -10,6 +10,16 @@ api.nvim_create_user_command("Format", utils.lsp_format, { range = "%" })
 lspconf.orig_signs_handler = orig_signs_handler
 lspconf.ns = ns
 
+local function format_diagnostic(diagnostic)
+  if diagnostic.user_data ~= nil and diagnostic.user_data.lsp ~= nil then
+    local code = diagnostic.user_data.lsp.code
+    if code ~= nil then
+      return string.format("%s: %s", code, diagnostic.message)
+    end
+  end
+  return diagnostic.message
+end
+
 function M.setup(cfg)
   lspconf.cfg = vim.tbl_deep_extend("keep", cfg or {}, utils.default)
   utils.set_signs(lspconf.cfg.signs)
@@ -38,12 +48,8 @@ function M.setup(cfg)
       format = function(diagnostic)
         if diagnostic.severity then
           local severity = vim.diagnostic.severity[diagnostic.severity]
-          if vim.tbl_contains({ "ERROR", "WARN"}, severity) then
-            return string.format(
-              "%s: %s",
-              diagnostic.user_data.lsp.code,
-              diagnostic.message
-            )
+          if vim.tbl_contains({ "ERROR", "WARN" }, severity) then
+            return format_diagnostic(diagnostic)
           end
         end
       end,
@@ -57,20 +63,7 @@ function M.setup(cfg)
     float = {
       source = true,
       focus = false,
-      format = function(diagnostic)
-        if
-          diagnostic.user_data ~= nil
-          and diagnostic.user_data.lsp ~= nil
-          and diagnostic.user_data.lsp.code ~= nil
-        then
-          return string.format(
-            "%s: %s",
-            diagnostic.user_data.lsp.code,
-            diagnostic.message
-          )
-        end
-        return diagnostic.message
-      end,
+      format = format_diagnostic,
     },
   }
 end
