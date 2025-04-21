@@ -23,7 +23,7 @@ function M.setup(cfg)
     }
   end
 
-  if lspconf.cfg.virtual_text then
+  if lspconf.cfg.virtual_text and lspconf.cfg.virtual_text.enabled then
     vim.diagnostic.handlers.virtual_text = {
       show = lspconf.show_virtual_text,
       hide = lspconf.hide_virtual_text,
@@ -33,6 +33,21 @@ function M.setup(cfg)
   vim.diagnostic.config {
     severity_sort = not lspconf.cfg.signs,
     signs = true,
+    virtual_lines = {
+      current_line = true,
+      format = function(diagnostic)
+        if diagnostic.severity then
+          local severity = vim.diagnostic.severity[diagnostic.severity]
+          if vim.tbl_contains({ "ERROR", "WARN"}, severity) then
+            return string.format(
+              "%s: %s",
+              diagnostic.user_data.lsp.code,
+              diagnostic.message
+            )
+          end
+        end
+      end,
+    },
     virtual_text = {
       source = false,
       format = function(_)

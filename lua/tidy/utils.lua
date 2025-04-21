@@ -17,6 +17,7 @@ M.default = {
     Hint = { text = "", texthl = "DiagnosticSignHint" },
   },
   virtual_text = {
+    enabled = true,
     marker = "◆",
     marker_indent = 1,
     intermarker_distance = 0,

@@ -114,4 +114,23 @@ function M.hide_virtual_text(_, bufnr)
   end
 end
 
+function M.toggle_plugin_diagnostic()
+  if M.cfg.virtual_text.enabled then
+    vim.diagnostic.enable(false, { ns_id = M.ns })
+    M.cfg.virtual_text.enabled = false
+    vim.diagnostic.handlers.virtual_text = {
+      show = nil,
+      hide = nil,
+    }
+  else
+    vim.diagnostic.enable(true, { ns_id = M.ns })
+    M.cfg.virtual_text.enabled = true
+    M.show_virtual_text(nil, 0)
+    vim.diagnostic.handlers.virtual_text = {
+      show = M.show_virtual_text,
+      hide = M.hide_virtual_text,
+    }
+  end
+end
+
 return M
